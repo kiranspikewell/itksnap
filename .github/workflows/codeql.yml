@@ -39,11 +39,24 @@ jobs:
       run: choco install git
 
     - name: Install FLTK
+      shell: pwsh
       run: |
+        # Define URLs and file names
         $fltkInstaller = 'https://www.fltk.org/pub/fltk/1.3.5/fltk-1.3.5-source.tar.gz'
         $fltkTar = 'fltk-1.3.5-source.tar.gz'
+        $destinationPath = "$Env:USERPROFILE\fltk-1.3.5-source"
+    
+        # Download the FLTK source tarball
         Invoke-WebRequest -Uri $fltkInstaller -OutFile $fltkTar
-        tar -xvf $fltkTar -C $Env:USERPROFILE\fltk-1.3.5-source
+    
+        # Create the destination directory if it doesn't exist
+        if (-not (Test-Path $destinationPath)) {
+            New-Item -Path $destinationPath -ItemType Directory
+        }
+    
+        # Extract the tarball
+        tar -xvf $fltkTar -C $destinationPath
+
 
     - name: Open Developer Command Prompt for Visual Studio
       shell: cmd
