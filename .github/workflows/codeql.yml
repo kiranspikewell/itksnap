@@ -40,9 +40,10 @@ jobs:
 
     - name: Install Qt
       run: |
-        $qtInstaller = 'https://download.qt.io/official_releases/qt/6.2/6.2.2/qt-opensource-windows-x86-6.2.2.exe'
-        Invoke-WebRequest -Uri $qtInstaller -OutFile 'qt-installer.exe'
-        Start-Process -FilePath 'qt-installer.exe' -ArgumentList '--silent --platform minimal' -Wait
+        $qtInstaller = 'https://download.qt.io/official_releases/qt/6.5/6.5.1/single/qt-everywhere-src-6.5.1.zip'
+        $qtZip = 'qt-everywhere-src-6.5.1.zip'
+        Invoke-WebRequest -Uri $qtInstaller -OutFile $qtZip
+        Expand-Archive -Path $qtZip -DestinationPath $Env:USERPROFILE\qt-everywhere-src-6.5.1
 
     - name: Open Developer Command Prompt for Visual Studio
       shell: cmd
