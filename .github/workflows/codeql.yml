@@ -38,12 +38,12 @@ jobs:
     - name: Install Git
       run: choco install git
 
-    - name: Install Qt
+    - name: Install FLTK
       run: |
-        $qtInstaller = 'https://download.qt.io/official_releases/qt/6.5/6.5.1/single/qt-everywhere-src-6.5.1.zip'
-        $qtZip = 'qt-everywhere-src-6.5.1.zip'
-        Invoke-WebRequest -Uri $qtInstaller -OutFile $qtZip
-        Expand-Archive -Path $qtZip -DestinationPath $Env:USERPROFILE\qt-everywhere-src-6.5.1
+        $fltkInstaller = 'https://www.fltk.org/pub/fltk/1.3.5/fltk-1.3.5-source.tar.gz'
+        $fltkTar = 'fltk-1.3.5-source.tar.gz'
+        Invoke-WebRequest -Uri $fltkInstaller -OutFile $fltkTar
+        tar -xvf $fltkTar -C $Env:USERPROFILE\fltk-1.3.5-source
 
     - name: Open Developer Command Prompt for Visual Studio
       shell: cmd
@@ -69,6 +69,14 @@ jobs:
         cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DVTK_GROUP_ENABLE_Qt=YES -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=NO -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=NO ../vtk
         nmake
 
+    - name: Build FLTK
+      shell: cmd
+      run: |
+        CALL "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+        cd $Env:USERPROFILE\fltk-1.3.5-source
+        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release .
+        nmake
+
     - name: Build ITKSnap
       shell: cmd
       run: |
@@ -76,17 +84,16 @@ jobs:
         git clone https://github.com/pyush0619/itksnap.git itksnap/itksnap
         mkdir itksnap/gcc64rel
         cd itksnap/gcc64rel
-        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DITK_DIR=../../itk/itk-5.2.1/gcc64rel -DVTK_DIR=../../vtk/vtk-9.1.0/gcc64rel -DCMAKE_PREFIX_PATH=C:/Qt/6.2.2/msvc2019_x64/lib/cmake ../itksnap
+        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DITK_DIR=../../itk/itk-5.2.1/gcc64rel -DVTK_DIR=../../vtk/vtk-9.1.0/gcc64rel -DFLTK_DIR=$Env:USERPROFILE\fltk-1.3.5-source ../itksnap
         nmake
 
     - name: Initialize the CodeQL toolchain
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: cpp
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@v3
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
-      
+      uses: github/codeql-action/analyze@v3
