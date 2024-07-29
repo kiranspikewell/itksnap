@@ -1,4 +1,4 @@
-name: CodeQL
+name: Build and Analyze ITKSnap
 
 on:
   push:
@@ -28,15 +28,52 @@ jobs:
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
         iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'));
 
+    - name: Install CMake
+      run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+
     - name: Install Visual Studio 2022 Build Tools
       run: |
         choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --locale en-US"
-    
 
-    - name: Build Notepad++ manually
+    - name: Install Git
+      run: choco install git
+
+    - name: Install Qt
+      run: choco install qt --version=6.2.2
+
+    - name: Open Developer Command Prompt for Visual Studio
+      shell: cmd
+      run: CALL "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+
+    - name: Build ITK
+      shell: cmd
       run: |
-        echo 'Building Notepad++ manually...'
-        & "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe" PowerEditor/visual.net/notepadPlus.sln /p:Configuration=Release /p:Platform=x64
+        CALL "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+        git clone https://github.com/InsightSoftwareConsortium/ITK.git itk/itk-5.2.1/itk
+        mkdir itk/itk-5.2.1/gcc64rel
+        cd itk/itk-5.2.1/gcc64rel
+        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release ../itk
+        nmake
+
+    - name: Build VTK
+      shell: cmd
+      run: |
+        CALL "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+        git clone https://gitlab.kitware.com/vtk/vtk.git vtk/vtk-9.1.0/vtk
+        mkdir vtk/vtk-9.1.0/gcc64rel
+        cd vtk/vtk-9.1.0/gcc64rel
+        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DVTK_GROUP_ENABLE_Qt=YES -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=NO -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=NO ../vtk
+        nmake
+
+    - name: Build ITKSnap
+      shell: cmd
+      run: |
+        CALL "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+        git clone https://github.com/pyush0619/itksnap.git itksnap/itksnap
+        mkdir itksnap/gcc64rel
+        cd itksnap/gcc64rel
+        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DITK_DIR=../../itk/itk-5.2.1/gcc64rel -DVTK_DIR=../../vtk/vtk-9.1.0/gcc64rel -DCMAKE_PREFIX_PATH=C:/Qt/6.2.2/msvc2019_x64/lib/cmake ../itksnap
+        nmake
 
     - name: Initialize the CodeQL toolchain
       uses: github/codeql-action/init@v2
