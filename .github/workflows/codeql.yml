@@ -39,7 +39,7 @@ jobs:
       run: choco install git
 
     - name: Install Qt
-      run: choco install qt --version=6.2.2
+      run: choco install qt
 
     - name: Open Developer Command Prompt for Visual Studio
       shell: cmd
