@@ -39,7 +39,7 @@ jobs:
     - name: Download and build dependencies
       run: |
         # Download and extract ITK
-        wget https://sourceforge.net/projects/itk/files/itk/4.2/InsightToolkit-4.2.0.tar.gz
+        wget https://github.com/InsightSoftwareConsortium/ITK/releases/download/v4.2.0/InsightToolkit-4.2.0.tar.gz
         tar -xzf InsightToolkit-4.2.0.tar.gz
         mv InsightToolkit-4.2.0 ITK-4.2
 
