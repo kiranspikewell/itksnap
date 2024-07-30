@@ -1,107 +1,92 @@
-name: Build and Analyze ITKSnap
+name: CodeQL
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    # The branches below must be a subset of the branches above
+    branches: [ main ]
   schedule:
-    - cron: '0 1 * * 3'
+    - cron: '0 0 * * 0'
 
 jobs:
   analyze:
     name: Analyze
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp' ]
-    
+        language: [cpp]
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Install Chocolatey
-      run: |
-        Set-ExecutionPolicy Bypass -Scope Process -Force; 
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
-        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'));
+    - name: Set up CMake
+      uses: jwlawson/actions-setup-cmake@v3
 
-    - name: Install CMake
-      run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-
-    - name: Install Visual Studio 2022 Build Tools
-      run: |
-        choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --locale en-US"
-
-    - name: Install Git
-      run: choco install git
-
-    - name: Install Qt
-      run: |
-        $qtInstaller = 'https://download.qt.io/official_releases/qt/6.5/6.5.1/single/qt-everywhere-src-6.5.1.zip'
-        $qtZip = 'qt-everywhere-src-6.5.1.zip'
-        Invoke-WebRequest -Uri $qtInstaller -OutFile $qtZip
-        Expand-Archive -Path $qtZip -DestinationPath $Env:USERPROFILE\qt-everywhere-src-6.5.1
-
-    - name: Open Developer Command Prompt for Visual Studio
-      shell: cmd
-      run: CALL "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-
-    - name: Build ITK
-      shell: cmd
-      run: |
-        CALL "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-        mkdir itk
-        cd itk
-        git clone https://github.com/InsightSoftwareConsortium/ITK.git itk-5.2.1
-        mkdir itk-5.2.1\gcc64rel
-        cd itk-5.2.1\gcc64rel
-        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release ..\..
-        nmake
-
-    - name: Verify ITK Directory
-      run: |
-        dir itk\itk-5.2.1\gcc64rel
-
-    - name: Build VTK
-      shell: cmd
-      run: |
-        CALL "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-        mkdir vtk
-        cd vtk
-        git clone https://gitlab.kitware.com/vtk/vtk.git vtk-9.1.0
-        mkdir vtk-9.1.0\gcc64rel
-        cd vtk-9.1.0\gcc64rel
-        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DVTK_GROUP_ENABLE_Qt=YES -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=NO -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=NO ..\..
-        nmake
-
-    - name: Verify VTK Directory
-      run: |
-        dir vtk\vtk-9.1.0\gcc64rel
-
-    - name: Build ITKSnap
-      shell: cmd
-      run: |
-        CALL "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-        git clone https://github.com/pyush0619/itksnap.git itksnap
-        mkdir itksnap\gcc64rel
-        cd itksnap\gcc64rel
-        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DITK_DIR=..\..\itk\itk-5.2.1\gcc64rel -DVTK_DIR=..\..\vtk\vtk-9.1.0\gcc64rel -DCMAKE_PREFIX_PATH=$Env:USERPROFILE\qt-everywhere-src-6.5.1 ..\..
-        nmake
-
-    - name: Verify ITKSnap Directory
-      run: |
-        dir itksnap\gcc64rel
-
-    - name: Initialize the CodeQL toolchain
-      uses: github/codeql-action/init@v2
+    - name: Set up CodeQL
+      uses: github/codeql-action/init@v3
       with:
-        languages: cpp
+        languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libx11-dev libxt-dev libxft-dev libxext-dev libglu1-mesa-dev
+
+    - name: Download and build dependencies
+      run: |
+        # Download and extract ITK
+        wget https://sourceforge.net/projects/itk/files/itk/4.2/InsightToolkit-4.2.0.tar.gz
+        tar -xzf InsightToolkit-4.2.0.tar.gz
+        mv InsightToolkit-4.2.0 ITK-4.2
+
+        # Download and extract VTK
+        wget https://www.vtk.org/files/release/5.6/vtk-5.6.1.tar.gz
+        tar -xzf vtk-5.6.1.tar.gz
+        mv VTK-5.6.1 VTK-5.61
+
+        # Download and extract FLTK
+        wget https://www.fltk.org/pub/fltk/1.3.5/fltk-1.3.5-source.tar.gz
+        tar -xzf fltk-1.3.5-source.tar.gz
+        mv fltk-1.3.5 fltk-1.3
+
+        # Build ITK
+        mkdir ITK-4.2-build
+        cd ITK-4.2-build
+        cmake ../ITK-4.2
+        make
+        sudo make install
+        cd ..
+
+        # Build VTK
+        mkdir VTK-5.61-build
+        cd VTK-5.61-build
+        cmake ../VTK-5.61
+        make
+        sudo make install
+        cd ..
+
+        # Build FLTK
+        mkdir fltk-1.3-build
+        cd fltk-1.3-build
+        cmake ../fltk-1.3
+        make
+        sudo make install
+        cd ..
+
+    - name: Configure ITK-SNAP
+      run: |
+        mkdir itksnap-build
+        cd itksnap-build
+        cmake -DInsightToolkit_DIR=/usr/local \
+              -DVTK_DIR=/usr/local \
+              -DFLTK_DIR=/usr/local \
+              ../
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "security-and-quality"
