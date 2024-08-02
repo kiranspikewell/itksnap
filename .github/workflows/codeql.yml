@@ -28,7 +28,7 @@ jobs:
         cmake-version: '3.26'
 
     - name: Set up CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
 
@@ -59,10 +59,10 @@ jobs:
         sudo make install
         cd ..
 
-        # Build VTK
+        # Build VTK with Qt support
         mkdir VTK-9.1.0-build
         cd VTK-9.1.0-build
-        cmake ../VTK-9.1.0
+        cmake -DVTK_QT_VERSION=5 -DVTK_USE_QT=ON -DQT_QMAKE_EXECUTABLE=$(which qmake) ../VTK-9.1.0
         make -j$(nproc)
         sudo make install
         cd ..
@@ -73,6 +73,7 @@ jobs:
         cd itksnap-build
         cmake -DInsightToolkit_DIR=/usr/local \
               -DVTK_DIR=/usr/local \
+              -DVTK_QT_VERSION=5 \
               ../
 
     - name: Build ITK-SNAP
