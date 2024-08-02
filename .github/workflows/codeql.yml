@@ -4,7 +4,6 @@ on:
   push:
     branches: [ master ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ master ]
   schedule:
     - cron: '0 0 * * 0'
@@ -25,9 +24,11 @@ jobs:
 
     - name: Set up CMake
       uses: jwlawson/actions-setup-cmake@v1
+      with:
+        cmake-version: '3.26'
 
     - name: Set up CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
 
@@ -39,41 +40,31 @@ jobs:
     - name: Download and build dependencies
       run: |
         # Download and extract ITK
-        wget https://github.com/InsightSoftwareConsortium/ITK/releases/download/v4.2.0/InsightToolkit-4.2.0.tar.gz
-        tar -xzf InsightToolkit-4.2.0.tar.gz
-        mv InsightToolkit-4.2.0 ITK-4.2
+        wget https://github.com/InsightSoftwareConsortium/ITK/releases/download/v5.2.1/InsightToolkit-5.2.1.tar.gz
+        tar -xzf InsightToolkit-5.2.1.tar.gz
+        mv InsightToolkit-5.2.1 ITK-5.2.1
 
         # Download and extract VTK
-        wget https://www.vtk.org/files/release/5.6/vtk-5.6.1.tar.gz
-        tar -xzf vtk-5.6.1.tar.gz
-        mv VTK-5.6.1 VTK-5.61
+        wget https://vtk.org/files/release/9.1/VTK-9.1.0.tar.gz
+        tar -xzf VTK-9.1.0.tar.gz
+        mv VTK-9.1.0 VTK-9.1.0
 
-        # Download and extract FLTK
-        wget https://www.fltk.org/pub/fltk/1.3.5/fltk-1.3.5-source.tar.gz
-        tar -xzf fltk-1.3.5-source.tar.gz
-        mv fltk-1.3.5 fltk-1.3
+        # Install Qt
+        sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
 
         # Build ITK
-        mkdir ITK-4.2-build
-        cd ITK-4.2-build
-        cmake ../ITK-4.2
-        make
+        mkdir ITK-5.2.1-build
+        cd ITK-5.2.1-build
+        cmake ../ITK-5.2.1
+        make -j$(nproc)
         sudo make install
         cd ..
 
         # Build VTK
-        mkdir VTK-5.61-build
-        cd VTK-5.61-build
-        cmake ../VTK-5.61
-        make
-        sudo make install
-        cd ..
-
-        # Build FLTK
-        mkdir fltk-1.3-build
-        cd fltk-1.3-build
-        cmake ../fltk-1.3
-        make
+        mkdir VTK-9.1.0-build
+        cd VTK-9.1.0-build
+        cmake ../VTK-9.1.0
+        make -j$(nproc)
         sudo make install
         cd ..
 
@@ -83,10 +74,14 @@ jobs:
         cd itksnap-build
         cmake -DInsightToolkit_DIR=/usr/local \
               -DVTK_DIR=/usr/local \
-              -DFLTK_DIR=/usr/local \
               ../
 
+    - name: Build ITK-SNAP
+      run: |
+        cd itksnap-build
+        make -j$(nproc)
+
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v2
       with:
         category: "security-and-quality"
