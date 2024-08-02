@@ -48,7 +48,9 @@ jobs:
         # Download and extract VTK
         wget https://vtk.org/files/release/9.1/VTK-9.1.0.tar.gz
         tar -xzf VTK-9.1.0.tar.gz
-        mv VTK-9.1.0 VTK-9.1.0
+
+        # Renaming the extracted directory
+        mv VTK-9.1.0 VTK-9.1.0-src
 
         # Install Qt
         sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
@@ -64,7 +66,7 @@ jobs:
         # Build VTK with Qt support
         mkdir VTK-9.1.0-build
         cd VTK-9.1.0-build
-        cmake -DVTK_QT_VERSION=5 -DVTK_GROUP_ENABLE_Qt=YES -DQt5_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt5 ../VTK-9.1.0
+        cmake -DVTK_QT_VERSION=5 -DVTK_GROUP_ENABLE_Qt=YES -DQt5_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt5 ../VTK-9.1.0-src
         make -j$(nproc)
         sudo make install
         cd ..
