@@ -28,7 +28,7 @@ jobs:
         cmake-version: '3.26'
 
     - name: Set up CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
 
@@ -51,10 +51,10 @@ jobs:
         # Install Qt
         sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
 
-        # Build ITK
+        # Build ITK with the required module
         mkdir ITK-5.2.1-build
         cd ITK-5.2.1-build
-        cmake ../ITK-5.2.1
+        cmake -DModule_MorphologicalContourInterpolation:BOOL=ON ../ITK-5.2.1
         make -j$(nproc)
         sudo make install
         cd ..
