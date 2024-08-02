@@ -28,14 +28,15 @@ jobs:
         cmake-version: '3.26'
 
     - name: Set up CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libx11-dev libxt-dev libxft-dev libxext-dev libglu1-mesa-dev libglvnd-dev
+        sudo apt-get install -y libx11-dev libxt-dev libxft-dev libxext-dev libglu1-mesa-dev libglvnd-dev \
+                                qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
 
     - name: Download and build dependencies
       run: |
@@ -47,6 +48,7 @@ jobs:
         # Download and extract VTK
         wget https://vtk.org/files/release/9.1/VTK-9.1.0.tar.gz
         tar -xzf VTK-9.1.0.tar.gz
+        mv VTK-9.1.0 VTK-9.1.0
 
         # Install Qt
         sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
@@ -62,7 +64,7 @@ jobs:
         # Build VTK with Qt support
         mkdir VTK-9.1.0-build
         cd VTK-9.1.0-build
-        cmake -DVTK_QT_VERSION=5 -DVTK_USE_QT=ON -DQT_QMAKE_EXECUTABLE=$(which qmake) ../VTK-9.1.0
+        cmake -DVTK_QT_VERSION=5 -DVTK_GROUP_ENABLE_Qt=YES -DQt5_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt5 ../VTK-9.1.0
         make -j$(nproc)
         sudo make install
         cd ..
@@ -72,8 +74,7 @@ jobs:
         mkdir itksnap-build
         cd itksnap-build
         cmake -DInsightToolkit_DIR=/usr/local \
-              -DVTK_DIR=/usr/local \
-              -DVTK_QT_VERSION=5 \
+              -DVTK_DIR=/usr/local/lib/cmake/vtk-9.1 \
               ../
 
     - name: Build ITK-SNAP
