@@ -2,9 +2,9 @@ name: CodeQL
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   schedule:
     - cron: '0 0 * * 0'
 
@@ -28,7 +28,7 @@ jobs:
         cmake-version: '3.26'
 
     - name: Set up CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
 
@@ -47,7 +47,6 @@ jobs:
         # Download and extract VTK
         wget https://vtk.org/files/release/9.1/VTK-9.1.0.tar.gz
         tar -xzf VTK-9.1.0.tar.gz
-        mv VTK-9.1.0 VTK-9.1.0
 
         # Install Qt
         sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
@@ -82,6 +81,6 @@ jobs:
         make -j$(nproc)
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         category: "security-and-quality"
