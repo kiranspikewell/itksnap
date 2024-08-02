@@ -35,7 +35,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libx11-dev libxt-dev libxft-dev libxext-dev libglu1-mesa-dev
+        sudo apt-get install -y libx11-dev libxt-dev libxft-dev libxext-dev libglu1-mesa-dev libglvnd-dev
 
     - name: Download and build dependencies
       run: |
